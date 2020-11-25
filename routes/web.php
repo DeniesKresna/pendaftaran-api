@@ -29,6 +29,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
 
 $router->group(['prefix'=>'api', 'middleware'=>'auth'], function () use ($router){
 
+
 	//===================users================================
 	$router->get('profile', 'Admin\UserController@profile');
     $router->get('users/{id}', 'Admin\UserController@show');
