@@ -19,4 +19,8 @@ class Academy extends Model
 	public function updater(){
 		return $this->belongsTo("App\User","updater_id");
 	}
+
+	public function academy_period(){
+		return $this->hasMany("App\Models\AcademyPeriod");
+	}
 }

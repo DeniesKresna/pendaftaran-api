@@ -81,9 +81,17 @@ $app->routeMiddleware([
 
 //$app->register(App\Providers\AppServiceProvider::class);
 $app->register(App\Providers\AuthServiceProvider::class);
+$app->register(Illuminate\Mail\MailServiceProvider::class);
 $app->register(Tymon\JWTAuth\Providers\LumenServiceProvider::class);
+$app->register(Ixudra\Curl\CurlServiceProvider::class);
 //$app->register(App\Providers\EventServiceProvider::class);
 
+
+$app->configure('mail');/*
+$app->alias('mailer', Illuminate\Mail\Mailer::class);
+$app->alias('mailer', Illuminate\Contracts\Mail\Mailer::class);
+$app->alias('mailer', Illuminate\Contracts\Mail\MailQueue::class);*/
+//class_alias('Ixudra\Curl\Facades\Curl', 'Curl');
 /*
 |--------------------------------------------------------------------------
 | Load The Application Routes
@@ -100,5 +108,9 @@ $app->router->group([
 ], function ($router) {
     require __DIR__.'/../routes/web.php';
 });
+
+
+//set locale
+app('translator')->setLocale("id");
 
 return $app;

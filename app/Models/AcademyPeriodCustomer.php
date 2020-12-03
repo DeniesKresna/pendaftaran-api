@@ -24,7 +24,7 @@ class AcademyPeriodCustomer extends Model
 		return $this->belongsTo("App\Models\AcademyPeriod");
 	}
 
-	public function customers(){
+	public function customer(){
 		return $this->belongsTo("App\Models\Customer");
 	}
 }

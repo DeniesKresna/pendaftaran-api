@@ -17,21 +17,24 @@ $router->get('/', function () use ($router) {
 
 $router->group(['prefix' => 'api'], function () use ($router) {
     $router->post('register', 'Admin\AuthController@register');
-     $router->post('login', 'Admin\AuthController@login');
+    $router->post('auth/login', 'Admin\AuthController@login');
+	$router->get('auth/me', 'Admin\AuthController@me');
 
     //===================academies================================
 	$router->get('academies/list', 'Admin\AcademyController@list');
 	$router->post('academies/customer', 'Admin\AcademyController@customerStore');
+	$router->post('academies/payment-success-'.env("MIDTRANS_PAYMENT_SECRET_URL"), 'Admin\AcademyController@successPayment');
 
 	//===================customer================================
 	$router->get('customers/email/{email}', 'Admin\CustomerController@showByEmail');
 });
 
 $router->group(['prefix'=>'api', 'middleware'=>'auth'], function () use ($router){
-
-
 	//===================users================================
 	$router->get('profile', 'Admin\UserController@profile');
     $router->get('users/{id}', 'Admin\UserController@show');
     $router->get('users', 'Admin\UserController@index');
+	$router->get('academies/customer', 'Admin\AcademyController@customerShow');
+	$router->post('academies/payment', 'Admin\AcademyController@paymentStore');
+	$router->delete('academies/customer/{id}', 'Admin\AcademyController@customerDestroy');
 });

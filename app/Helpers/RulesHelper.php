@@ -42,6 +42,15 @@ if (! function_exists('rules_lists')) {
                     'domicile' => 'required|max:191'
                 ];
             }
+            else if($method=="paymentStore"){
+                return [
+                    'transaction_id' => 'required|max:191',
+                    'amount' => 'required|max:191',
+                    'academy_period_customer_id' => [new \App\Rules\isExists("academy_period_customer","id"),'required'],
+                    'via' => 'required|max:191',
+                ];
+            }
+
         }
         
         //========================Global============================================
