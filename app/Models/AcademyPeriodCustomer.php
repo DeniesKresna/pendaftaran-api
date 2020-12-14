@@ -17,6 +17,7 @@ class AcademyPeriodCustomer extends Model
 		'academy_period_id',
 		'customer_id',
 		'price',
+		'promo_code',
 		'description'
 	];
 

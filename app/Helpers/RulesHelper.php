@@ -33,7 +33,7 @@ if (! function_exists('rules_lists')) {
         if($controller == "AcademyController"){
             if($method=="customerStore"){
                 return [
-                    'ja_name' => 'max:191',
+                    'ja_ids' => 'array|required|min:1',
                     'name' => 'required|max:191',
                     'email' => 'required|email|max:191',
                     'phone' => 'required|max:191',
@@ -48,6 +48,33 @@ if (! function_exists('rules_lists')) {
                     'amount' => 'required|max:191',
                     'academy_period_customer_id' => [new \App\Rules\isExists("academy_period_customer","id"),'required'],
                     'via' => 'required|max:191',
+                ];
+            }
+            else if($method=="store"){
+                return [
+                    'name' => 'required|max:191|unique:academies',
+                ];
+            }
+        }
+
+        //================================Academy Period=======================
+        if($controller == "AcademyPeriodController"){
+            if($method=="store"){
+                return [
+                    'academy_id' => [new \App\Rules\isExists("academies","id"),'required'],
+                    'period' => 'required|date|date_format:Y-m-d',
+                    'active' => 'required|in:0,1',
+                    'description' => 'max:191',
+                    'price' => 'required|numeric'
+                ];
+            }
+            else{
+                return [
+                    'academy_id' => [new \App\Rules\isExists("academies","id")],
+                    'period' => 'date|date_format:Y-m-d',
+                    'active' => 'in:0,1',
+                    'description' => 'max:191',
+                    'price' => 'numeric'
                 ];
             }
 

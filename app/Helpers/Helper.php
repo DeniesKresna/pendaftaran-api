@@ -114,7 +114,7 @@ function send_response($status, $message, $data = []){
 function exclude_array($request_datas = [], $in_array = []){
     $arr = [];
     foreach ($request_datas as $key => $value){
-        if (in_array($key, $in_array) && !empty($value)) $arr[$key] = $value;
+        if (in_array($key, $in_array) && !is_null($value)) $arr[$key] = $value;
     }
     return $arr;
 }

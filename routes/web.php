@@ -34,7 +34,18 @@ $router->group(['prefix'=>'api', 'middleware'=>'auth'], function () use ($router
 	$router->get('profile', 'Admin\UserController@profile');
     $router->get('users/{id}', 'Admin\UserController@show');
     $router->get('users', 'Admin\UserController@index');
+
+    //===================academies================================
 	$router->get('academies/customer', 'Admin\AcademyController@customerShow');
 	$router->post('academies/payment', 'Admin\AcademyController@paymentStore');
 	$router->delete('academies/customer/{id}', 'Admin\AcademyController@customerDestroy');
+	$router->get('academies', 'Admin\AcademyController@index');
+	$router->post('academies', 'Admin\AcademyController@store');
+	$router->delete('academies/{id}', 'Admin\AcademyController@destroy');
+
+	//===================academy period================================
+	$router->get('academy-periods', 'Admin\AcademyPeriodController@index');
+	$router->post('academy-periods', 'Admin\AcademyPeriodController@store');
+	$router->put('academy-periods/{id}', 'Admin\AcademyPeriodController@update');
+	$router->delete('academy-periods/{id}', 'Admin\AcademyPeriodController@destroy');
 });

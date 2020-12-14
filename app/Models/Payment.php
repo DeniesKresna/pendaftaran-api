@@ -17,10 +17,9 @@ class Payment extends Model
 		'transaction_status',
 		'transaction_id',
 		'via',
-		'academy_period_customer_id',
 	];
 
-	public function academy_period_customer(){
-		return $this->belongsTo("App\Models\AcademyPeriodCustomer");
+	public function academy_period_customers(){
+		return $this->hasMany("App\Models\AcademyPeriodCustomer");
 	}
 }

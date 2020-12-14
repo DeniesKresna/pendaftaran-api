@@ -18,8 +18,12 @@ use App\Mails\AcademyMail;
 
 class AcademyController extends Controller
 {
-     public function index(){
-        $data = Academy::with('updater')->paginate(10);
+     public function index(Request $request){
+        $data = Academy::where('id','>',0);
+        if($request->has('search')){
+            $data->where('name','like','%'.$request->search.'%');
+        }
+        $data = Academy::with('updater')->orderBy('id','desc')->paginate(10);
         return response()->json(['data'=>$data]);
      }
 
@@ -34,6 +38,27 @@ class AcademyController extends Controller
         return response()->json(['data'=>$data]);
      }
 
+     public function store(Request $request){
+        $session_id = Auth::user()->id;
+        $datas = $request->all();
+
+        $validator = Validator::make($datas, rules_lists(__CLASS__, __FUNCTION__));
+        if ($validator->fails()) return response()->json(['errors'=>($validator->messages())],422);
+
+        $datas["updater_id"] = $session_id;
+        $data = Academy::create($datas);
+
+        return response()->json(['data'=>$data,'message'=>"Berhasil menambah data Kelas ".$request->name]);
+     }
+
+     public function destroy($id){
+        $data = Academy::findOrFail($id);
+        if($data->delete()){
+            return response()->json(["status"=>"ok"]);
+        }
+        return response()->json(["message"=>"Terjadi Kesalahan"],450);
+     }
+
      public function customerStore(Request $request){
         $datas = $request->all();
 
@@ -43,37 +68,42 @@ class AcademyController extends Controller
         $cus = Customer::updateOrCreate(["email"=>$datas["email"]],$datas);
         if($cus){
             //cek ada akademi X gak
-            $aca = Academy::where("name",$datas["ja_name"])->first();
-            if(!$aca) return response()->json(["message"=>"Tidak ada Akademi ".$datas["ja_name"]],450);
+            $acas = Academy::whereIn("id",$datas["ja_ids"])->pluck('id')->toArray();
+            if(count($acas) != count($datas["ja_ids"])) return response()->json(["message"=>"Periksa pemilihan Kelas kembali"],450);
 
             //cek akademi X lagi buka ato gak di periode ini
-            $aca_per = AcademyPeriod::where("academy_id",$aca->id)->where('active',1)->first();
-            if(!$aca_per) return response()->json(["message"=>"Penyelenggaraan Akademi ".$datas["ja_name"]." ditutup"],450);
+            $aca_pers = AcademyPeriod::whereIn("academy_id",$acas)->where('active',1)->get();
+            if(count($aca_pers) != count($datas["ja_ids"])) return response()->json(["message"=>"Periksa pemilihan Kelas kembali"],450);
 
             //cek customer A udah terdaftar belum di akademi X
-            $aca_per_cus = AcademyPeriodCustomer::where(["academy_period_id"=>$aca_per->id, "customer_id"=>$cus->id])->first();
-            if($aca_per_cus){
-                //jika sudah terdaftar dan pembayaran berhasil atau pending, tidak bisa melanjutkan pembayaran
-                if($aca_per_cus->status == 1 || $aca_per_cus->status == 2 )
-                    return response()->json(["message"=>"Kamu sudah mendaftar Akademi ".$datas["ja_name"]],450);
-            }else{
-                //jika belum terdaftar, tambahkan di peserta dengan status belum bayar
-                $updater_id = null;
-                if(Auth::check()){
-                    $updater_id = Auth::user()->id;
+            $amount = 0;
+            $aca_per_cus_ids = [];
+            foreach ($aca_pers as $aca_per) {
+                $aca_per_cus = AcademyPeriodCustomer::where(["academy_period_id"=>$aca_per->id, "customer_id"=>$cus->id])->first();
+                if($aca_per_cus){
+                    //jika sudah terdaftar dan pembayaran berhasil atau pending, tidak bisa melanjutkan pembayaran
+                    if($aca_per_cus->status == 1 || $aca_per_cus->status == 2 )
+                        return response()->json(["message"=>"Kamu sudah pernah mendaftar Akademi ".$aca_per_cus->academy_period->academy->name.". Pendaftaran dibatalkan."],450);
+                }else{
+                    //jika belum terdaftar, tambahkan di peserta dengan status belum bayar
+                    $updater_id = null;
+                    if(Auth::check()){
+                        $updater_id = Auth::user()->id;
+                    }
+                    $aca_per_cus = AcademyPeriodCustomer::create([
+                        "academy_period_id"=>$aca_per->id, "customer_id"=>$cus->id, "price"=>$aca_per->price, "updater_id"=>$updater_id]);
+                    if(!$aca_per_cus){
+                        return response()->json(["message"=>"Terjadi Kesalahan"],450);
+                    }
+                    array_push($aca_per_cus_ids, $aca_per_cus->id);
+                    $amount += $aca_per->price;
                 }
-                $aca_per_cus = AcademyPeriodCustomer::create([
-                    "academy_period_id"=>$aca_per->id, "customer_id"=>$cus->id, "price"=>$aca_per->price, "updater_id"=>$updater_id]);
-                if(!$aca_per_cus){
-                    return response()->json(["message"=>"Terjadi Kesalahan"],450);
-                }
-            }
+            }            
 
             if(Auth::check()){
-                return response()->json(["message"=>"Berhasil tambah peserta ".$datas["ja_name"],"payment"=>false]);
+                return response()->json(["message"=>"Berhasil tambah peserta","payment"=>false]);
             }
 
-            $amount = $aca_per->price;
             $last_payment_id = Payment::orderBy('id','desc')->value('id');
             $last_payment_id_plus_one = $last_payment_id + 1;
             $code = "ORD-JOBHUNACADEMY-".$aca_per_cus->id."-".$last_payment_id_plus_one;
@@ -83,19 +113,23 @@ class AcademyController extends Controller
             $payment = new Payment;
             $payment->amount = $amount;
             $payment->code = $code;
-            $payment->academy_period_customer_id = $aca_per_cus->id;
             $payment->via = "midtrans";
             $payment->save();
-            //===================================
 
             if(!$payment)
                 return response()->json(["message"=>"Terjadi Kesalahan"],450);
 
+            $res = AcademyPeriodCustomer::whereIn('id',$aca_per_cus_ids)->update(["payment_id"=>$payment->id]);
+            if(!$res)
+                return response()->json(["message"=>"Terjadi Kesalahan"],450);
+            //===================================
+
             $snap_response = $this->getMidtransToken($code,$amount);
+            
             if($snap_response["status"]){
-                return response()->json(["data"=>$snap_response["data"]]);
+                return response()->json(["data"=>$snap_response["data"],"payment"=>true]);
             }else{
-                return response()->json(["message"=>$snap_response["message"]],450);
+                return response()->json(["message"=>$snap_response["message"],"payment"=>true],450);
             }
 
         }
@@ -103,13 +137,17 @@ class AcademyController extends Controller
      }
 
      private function getMidtransToken($code,$amount){
+        //=========================untuk testing aja, bypass data
+        return ["status"=>true,"data"=>["redirect_url"=>"https://localhost:3000/academy/customer"]];
+        //=======================================================
+
         $serverAuthKey = "Basic ".base64_encode(env("MIDTRANS_SERVER_KEY").":");
         if($serverAuthKey){
             $response = Curl::to('https://app.sandbox.midtrans.com/snap/v1/transactions')
             ->withHeader('Accept: application/json')
             ->withContentType('application/json')
             ->withAuthorization($serverAuthKey)
-            ->withData(["transaction_details"=>["order_id"=>$code, "gross_amount"=>$amount],"callbacks"=>["finish"=>"localhost:3000/academy/form"]])
+            ->withData(["transaction_details"=>["order_id"=>$code, "gross_amount"=>$amount],/*"callbacks"=>["finish"=>"localhost:3000/academy/form"]*/])
             ->asJson(true)
             ->post();
 
@@ -128,21 +166,25 @@ class AcademyController extends Controller
             $tc = $request->transaction_status;
             $payment_code = $request->order_id;
             $payment = Payment::where('code',$payment_code)->firstOrFail();
-            $aca_per_cus = AcademyPeriodCustomer::findOrFail($payment->academy_period_customer_id);
-            $pending_string = "";
+            $status_string = "";
             if(in_array($tc, ["capture","settlement"])){
-                $aca_per_cus->status = 1;
+                $aca_per_cus_status = 1;
                 $status_string = "sudah berhasil :)";
             }
             else if($tc == "pending"){
-                $aca_per_cus->status = 2;
+                $aca_per_cus_status = 2;
                 $status_string = "masih pending ...";
             }
             else{
-                $aca_per_cus->status = 3;
+                $aca_per_cus_status = 3;
                 $status_string = "gagal :'(";
             }
-            $aca_per_cus->save();
+
+            $res = AcademyPeriodCustomer::where('payment_id',$payment->id)->update(["status",$aca_per_cus_status]);
+
+            if(!$res){
+                return response()->json(["message"=>"Terjadi Kesalahan"],450);
+            }
             $payment->transaction_status = $tc;
             $payment->transaction_id = $request->transaction_id;
             $payment->save();
@@ -182,8 +224,9 @@ class AcademyController extends Controller
                 $data = $data->where('apc.status',$request->status);
             }
         }
+        $price = $data->sum('apc.price');
         $data = $data->select("apc.*","a.name as academy_name","c.name as customer_name","ap.period")->paginate(10);
-        return response()->json($data->appends($request->all()));
+        return response()->json(["data"=>$data->appends($request->all()),"total_price"=>$price]);
      }
 
      public function paymentStore(Request $request){
@@ -212,6 +255,9 @@ class AcademyController extends Controller
 
      public function customerDestroy($id){
         $data = AcademyPeriodCustomer::findOrFail($id);
+        if(in_array($data->status,[1,2])){
+            return response()->json(["message"=>"Tidak bisa hapus peserta yang telah membayar"],450);
+        }
         if($data->delete()){
             return response()->json(["status"=>"ok"]);
         }
