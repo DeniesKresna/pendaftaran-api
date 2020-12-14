@@ -65,7 +65,7 @@ if (! function_exists('rules_lists')) {
                     'period' => 'required|date|date_format:Y-m-d',
                     'active' => 'required|in:0,1',
                     'description' => 'max:191',
-                    'price' => 'required|numeric'
+                    'price' => 'required|numeric|min:1'
                 ];
             }
             else{
@@ -74,7 +74,7 @@ if (! function_exists('rules_lists')) {
                     'period' => 'date|date_format:Y-m-d',
                     'active' => 'in:0,1',
                     'description' => 'max:191',
-                    'price' => 'numeric'
+                    'price' => 'numeric|min:1'
                 ];
             }
 

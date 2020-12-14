@@ -138,7 +138,7 @@ class AcademyController extends Controller
 
      private function getMidtransToken($code,$amount){
         //=========================untuk testing aja, bypass data
-        return ["status"=>true,"data"=>["redirect_url"=>"https://localhost:3000/academy/customer"]];
+        return ["status"=>true,"data"=>["redirect_url"=>"https://localhost:3000/academy/form"]];
         //=======================================================
 
         $serverAuthKey = "Basic ".base64_encode(env("MIDTRANS_SERVER_KEY").":");
@@ -225,7 +225,7 @@ class AcademyController extends Controller
             }
         }
         $price = $data->sum('apc.price');
-        $data = $data->select("apc.*","a.name as academy_name","c.name as customer_name","ap.period")->paginate(10);
+        $data = $data->select("apc.*","a.name as academy_name","c.name as customer_name","c.email as customer_email","ap.period")->paginate(10);
         return response()->json(["data"=>$data->appends($request->all()),"total_price"=>$price]);
      }
 

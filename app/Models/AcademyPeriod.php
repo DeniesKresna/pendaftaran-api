@@ -14,6 +14,7 @@ class AcademyPeriod extends Model
 	protected $fillable = [
 		'academy_id',
 		'period',
+		'price',
 		'active',
 		'mentor_id',
 		'updater_id'

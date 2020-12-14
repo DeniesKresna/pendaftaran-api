@@ -40,7 +40,7 @@ class AcademyPeriodController extends Controller
         //cek academy exist
         $res = AcademyPeriod::where(["academy_id"=>$request->academy_id, "period"=>$request->period])->first();
         if($res)
-            return response()->json(["message"=>"Akademi yang kamu maksud sudah pernah dibuat"]);
+            return response()->json(["message"=>"Akademi yang kamu maksud sudah pernah dibuat"],450);
 
         // validation
         $datas = $request->all();
