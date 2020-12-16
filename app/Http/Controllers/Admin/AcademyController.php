@@ -30,7 +30,7 @@ class AcademyController extends Controller
      public function list(Request $request){
         $data = Academy::where('id','>',0);
         if($request->has('active')){
-            $data->whereHas('academy_period', function($q){
+            $data->whereHas('academy_periods', function($q){
                 $q->where('active',1);
             });
         }
@@ -156,7 +156,7 @@ class AcademyController extends Controller
             ->withHeader('Accept: application/json')
             ->withContentType('application/json')
             ->withAuthorization($serverAuthKey)
-            ->withData(["transaction_details"=>["order_id"=>$code, "gross_amount"=>$amount],"callbacks"=>["finish"=>"https://localhost:3000/academy/form"]])
+            ->withData(["transaction_details"=>["order_id"=>$code, "gross_amount"=>$amount],"callbacks"=>["finish"=>"https://192.168.100.28:3000/academy/form"]])
             ->asJson(true)
             ->post();
 
@@ -237,7 +237,7 @@ class AcademyController extends Controller
                     ->join('academy_periods as ap','ap.id','=','apc.academy_period_id')
                     ->join('academies as a','a.id','=','ap.academy_id')
                     ->join('customers as c','c.id','=','apc.customer_id')
-                    ->join('payments as p','p.id','=','apc.payment_id')
+                    ->leftJoin('payments as p','p.id','=','apc.payment_id')
                     ->leftJoin('users as u','u.id','=','apc.updater_id')
                     ->select(DB::raw('apc.*, p.amount, a.name as academy_name, u.name as updater_name, c.name as customer_name, c.email as customer_email, ap.period, IF(apc.status = 0, "Belum", IF(apc.status = 1,"Lunas",IF(apc.status = 2,"Pending","Gagal"))) as status_string'));
 
@@ -278,7 +278,7 @@ class AcademyController extends Controller
         if ($validator->fails()) return response()->json(['errors'=>($validator->messages())],422);
 
         $customer_ids = array_column($request->customer_list, "id");
-        $customer_has_paid = AcademyPeriodCustomer::whereIn("id",$customer_ids)->whereIn("status",[1,2])->get();
+        $customer_has_paid = AcademyPeriodCustomer::whereIn("id",$customer_ids)->where("status",1)->get();
 
         if(count($customer_has_paid) > 0){
             return response()->json(["message"=>"Ada pembayaran yang sudah dibayarkan. Gagal mengubah status pembayaran."],450);
