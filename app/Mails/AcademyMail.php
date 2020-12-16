@@ -17,13 +17,13 @@ class AcademyMail extends Mailable
      *
      * @return void
      */
-    private $academyName;
+    private $academyPaid;
     private $customerName;
     private $status;
 
-    public function __construct($an = "", $cn = "", $st = "")
+    public function __construct($ap = [], $cn = "", $st = "")
     {
-        $this->academyName = $an;
+        $this->academyPaid = $ap;
         $this->customerName = $cn;
         $this->status = $st;
     }
@@ -41,7 +41,7 @@ class AcademyMail extends Mailable
                    ->with(
                     [
                         'name' => $this->customerName,
-                        'ja_name' =>  $this->academyName,
+                        'ja_list' =>  $this->academyPaid,
                         'status' =>  $this->status,
                     ]);
                    /*

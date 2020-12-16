@@ -46,7 +46,7 @@ if (! function_exists('rules_lists')) {
                 return [
                     'transaction_id' => 'required|max:191',
                     'amount' => 'required|max:191',
-                    'academy_period_customer_id' => [new \App\Rules\isExists("academy_period_customer","id"),'required'],
+                    'customer_list' => 'array|required|min:1',
                     'via' => 'required|max:191',
                 ];
             }

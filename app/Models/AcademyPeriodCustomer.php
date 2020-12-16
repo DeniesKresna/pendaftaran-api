@@ -16,7 +16,6 @@ class AcademyPeriodCustomer extends Model
 	protected $fillable = [
 		'academy_period_id',
 		'customer_id',
-		'price',
 		'promo_code',
 		'description'
 	];

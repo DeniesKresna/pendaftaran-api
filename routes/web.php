@@ -48,4 +48,7 @@ $router->group(['prefix'=>'api', 'middleware'=>'auth'], function () use ($router
 	$router->post('academy-periods', 'Admin\AcademyPeriodController@store');
 	$router->put('academy-periods/{id}', 'Admin\AcademyPeriodController@update');
 	$router->delete('academy-periods/{id}', 'Admin\AcademyPeriodController@destroy');
+
+	//=================== Payment ================================
+	$router->get('payments/{id}', 'Admin\PaymentController@show');
 });

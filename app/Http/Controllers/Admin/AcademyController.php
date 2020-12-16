@@ -91,23 +91,26 @@ class AcademyController extends Controller
                         $updater_id = Auth::user()->id;
                     }
                     $aca_per_cus = AcademyPeriodCustomer::create([
-                        "academy_period_id"=>$aca_per->id, "customer_id"=>$cus->id, "price"=>$aca_per->price, "updater_id"=>$updater_id]);
+                        "academy_period_id"=>$aca_per->id, "customer_id"=>$cus->id, "updater_id"=>$updater_id]);
                     if(!$aca_per_cus){
                         return response()->json(["message"=>"Terjadi Kesalahan"],450);
                     }
-                    array_push($aca_per_cus_ids, $aca_per_cus->id);
-                    $amount += $aca_per->price;
                 }
+                array_push($aca_per_cus_ids, $aca_per_cus->id);
+                $amount += $aca_per->price;
             }            
 
             if(Auth::check()){
                 return response()->json(["message"=>"Berhasil tambah peserta","payment"=>false]);
             }
 
-            $last_payment_id = Payment::orderBy('id','desc')->value('id');
-            $last_payment_id_plus_one = $last_payment_id + 1;
-            $code = "ORD-JOBHUNACADEMY-".$aca_per_cus->id."-".$last_payment_id_plus_one;
-            $code = md5(env("MIDTRANS_MD5_ADDITIONAL_CODE").$code);
+            $added_str = "";
+            if(count($aca_per_cus_ids)){
+                foreach ($aca_per_cus_ids as $aca_per_cus_id) {
+                    $added_str .= $aca_per_cus_id."-"; 
+                }
+            }
+            $code = "ORD-JOBHUNACADEMY-".$added_str.date("Y-m-d-H-i-s");//
 
             //===================================
             $payment = new Payment;
@@ -133,12 +136,12 @@ class AcademyController extends Controller
             }
 
         }
-        return response()->json(["message"=>"Terjadi Kesalahan"],450);
+        return response()->json(["message"=>"Terjadi Kesalahan4"],450);
      }
 
      private function getMidtransToken($code,$amount){
         //=========================untuk testing aja, bypass data
-        return ["status"=>true,"data"=>["redirect_url"=>"https://localhost:3000/academy/form"]];
+        //return ["status"=>true,"data"=>["redirect_url"=>"https://localhost:3000/academy/form"]];
         //=======================================================
 
         $serverAuthKey = "Basic ".base64_encode(env("MIDTRANS_SERVER_KEY").":");
@@ -147,7 +150,7 @@ class AcademyController extends Controller
             ->withHeader('Accept: application/json')
             ->withContentType('application/json')
             ->withAuthorization($serverAuthKey)
-            ->withData(["transaction_details"=>["order_id"=>$code, "gross_amount"=>$amount],/*"callbacks"=>["finish"=>"localhost:3000/academy/form"]*/])
+            ->withData(["transaction_details"=>["order_id"=>$code, "gross_amount"=>$amount],"callbacks"=>["finish"=>"https://localhost:3000/academy/form"]])
             ->asJson(true)
             ->post();
 
@@ -164,8 +167,17 @@ class AcademyController extends Controller
      public function successPayment(Request $request){
         if($request->has("transaction_status")){
             $tc = $request->transaction_status;
-            $payment_code = $request->order_id;
-            $payment = Payment::where('code',$payment_code)->firstOrFail();
+            $order_id = $request->order_id;
+            $status_code = $request->status_code;
+            $gross_amount = $request->gross_amount;
+            $server_key = env("MIDTRANS_SERVER_KEY");
+
+            $ha512 = hash('sha512', $order_id.$status_code.$gross_amount.$server_key);
+            if($ha512 != $request->signature_key){
+                return response()->json(["status_code"=>"400"],401);
+            }
+
+            $payment = Payment::where('code',$order_id)->firstOrFail();
             $status_string = "";
             if(in_array($tc, ["capture","settlement"])){
                 $aca_per_cus_status = 1;
@@ -180,7 +192,19 @@ class AcademyController extends Controller
                 $status_string = "gagal :'(";
             }
 
-            $res = AcademyPeriodCustomer::where('payment_id',$payment->id)->update(["status",$aca_per_cus_status]);
+            //cek jika pembayaran telah berhasil
+            $aca_per_cuses = AcademyPeriodCustomer::where('payment_id',$payment->id)->get();
+            $academies_paid = [];
+            foreach ($aca_per_cuses as $aca_per_cus) {
+                //jika ternyata pembayaran ada yang sudah dilakukan, batalkan update status terbayar.
+                if($aca_per_cus->status == 1){
+                    return response()->json(["status_code"=>"400","message"=>"has been paid"]);
+                }
+                $temp = ["name"=>$aca_per_cus->academy_period->academy->name, "period"=>$aca_per_cus->academy_period->period];
+                array_push($academies_paid, $temp);
+            }
+
+            $res = AcademyPeriodCustomer::where('payment_id',$payment->id)->update(["status"=>$aca_per_cus_status]);
 
             if(!$res){
                 return response()->json(["message"=>"Terjadi Kesalahan"],450);
@@ -189,8 +213,12 @@ class AcademyController extends Controller
             $payment->transaction_id = $request->transaction_id;
             $payment->save();
             
-            Mail::to($aca_per_cus->customer)
-                ->send(new AcademyMail($aca_per_cus->academy_period->academy->name, $aca_per_cus->customer->name, $status_string));
+            $aca_per_cus = AcademyPeriodCustomer::where('payment_id',$payment->id)->first();
+
+            if($aca_per_cus_status != 2){
+                Mail::to($aca_per_cus->customer)
+                    ->send(new AcademyMail($academies_paid, $aca_per_cus->customer->name, $status_string));
+            }
 
             return response()->json(["status_code"=>"200"]);
         }
@@ -202,7 +230,9 @@ class AcademyController extends Controller
         $data = DB::table('academy_period_customer as apc')
                     ->join('academy_periods as ap','ap.id','=','apc.academy_period_id')
                     ->join('academies as a','a.id','=','ap.academy_id')
-                    ->join('customers as c','c.id','=','apc.customer_id');
+                    ->join('customers as c','c.id','=','apc.customer_id')
+                    ->join('payments as p','p.id','=','apc.payment_id')
+                    ->select("apc.*","p.amount","a.name as academy_name","c.name as customer_name","c.email as customer_email","ap.period");
 
         if($request->has('search')){
             if(trim($request->search) != ""){
@@ -224,8 +254,12 @@ class AcademyController extends Controller
                 $data = $data->where('apc.status',$request->status);
             }
         }
-        $price = $data->sum('apc.price');
-        $data = $data->select("apc.*","a.name as academy_name","c.name as customer_name","c.email as customer_email","ap.period")->paginate(10);
+        $group_payments = (clone $data)->groupBy('apc.payment_id')->get();
+        $price = 0;
+        foreach ($group_payments as $group_payment) {
+            $price += $group_payment->amount;
+        }
+        $data = $data->paginate(10);
         return response()->json(["data"=>$data->appends($request->all()),"total_price"=>$price]);
      }
 
@@ -236,17 +270,22 @@ class AcademyController extends Controller
         $validator = Validator::make($datas, rules_lists(__CLASS__, __FUNCTION__));
         if ($validator->fails()) return response()->json(['errors'=>($validator->messages())],422);
 
+        $customer_ids = array_column($request->customer_list, "id");
+        $customer_has_paid = AcademyPeriodCustomer::whereIn("id",$customer_ids)->whereIn("status",[1,2])->get();
+
+        if(count($customer_has_paid) > 0){
+            return response()->json(["message"=>"Ada pembayaran yang sudah dibayarkan. Gagal mengubah status pembayaran."],450);
+        }
+
         $payment = new Payment;
         $payment->transaction_id = $request->transaction_id;
-        $payment->amount = $request->amount;
-        $payment->academy_period_customer_id = $request->academy_period_customer_id;
+        $payment->amount = intval($request->amount);
         $payment->via = $request->via;
         if($payment->save()){
-            $aca_per_cus = AcademyPeriodCustomer::findOrFail($request->academy_period_customer_id);
-            $aca_per_cus->price = $payment->amount;
-            $aca_per_cus->status = 1;
-            $aca_per_cus->updater_id = $session_id;
-            if($aca_per_cus->save()){
+            $res = AcademyPeriodCustomer::whereIn("id",$customer_ids)->update([
+                "status"=>1, "updater_id"=>$session_id, "payment_id"=>$payment->id
+            ]);
+            if($res){
                 return response()->json(["message"=>"Status Pembayaran diubah"]);
             }
         }
@@ -256,7 +295,7 @@ class AcademyController extends Controller
      public function customerDestroy($id){
         $data = AcademyPeriodCustomer::findOrFail($id);
         if(in_array($data->status,[1,2])){
-            return response()->json(["message"=>"Tidak bisa hapus peserta yang telah membayar"],450);
+            return response()->json(["message"=>"Tidak bisa hapus peserta yang telah/pending membayar"],450);
         }
         if($data->delete()){
             return response()->json(["status"=>"ok"]);
