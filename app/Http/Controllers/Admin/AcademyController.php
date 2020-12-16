@@ -53,6 +53,12 @@ class AcademyController extends Controller
 
      public function destroy($id){
         $data = Academy::findOrFail($id);
+        $aca_pers = $data->academy_periods;
+        foreach($aca_pers as $aca_per){
+            $customers = $aca_per->customers;
+            if(count($customers)>0)
+                return response()->json(["message"=>"Tidak bisa hapus Periode Akademi yang sudah memiliki peserta"],450);
+        }
         if($data->delete()){
             return response()->json(["status"=>"ok"]);
         }
@@ -232,7 +238,8 @@ class AcademyController extends Controller
                     ->join('academies as a','a.id','=','ap.academy_id')
                     ->join('customers as c','c.id','=','apc.customer_id')
                     ->join('payments as p','p.id','=','apc.payment_id')
-                    ->select("apc.*","p.amount","a.name as academy_name","c.name as customer_name","c.email as customer_email","ap.period");
+                    ->leftJoin('users as u','u.id','=','apc.updater_id')
+                    ->select(DB::raw('apc.*, p.amount, a.name as academy_name, u.name as updater_name, c.name as customer_name, c.email as customer_email, ap.period, IF(apc.status = 0, "Belum", IF(apc.status = 1,"Lunas",IF(apc.status = 2,"Pending","Gagal"))) as status_string'));
 
         if($request->has('search')){
             if(trim($request->search) != ""){

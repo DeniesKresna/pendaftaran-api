@@ -20,7 +20,7 @@ class Academy extends Model
 		return $this->belongsTo("App\User","updater_id");
 	}
 
-	public function academy_period(){
+	public function academy_periods(){
 		return $this->hasMany("App\Models\AcademyPeriod");
 	}
 }
