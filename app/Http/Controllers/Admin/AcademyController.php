@@ -25,7 +25,7 @@ class AcademyController extends Controller
         if($request->has('search')){
             $data->where('name','like','%'.$request->search.'%');
         }
-        $data = Academy::with('updater')->orderBy('id','desc')->paginate(10);
+        $data = $data->with('updater')->orderBy('id','desc')->paginate(10);
         return response()->json(['data'=>$data]);
      }
 
@@ -50,7 +50,7 @@ class AcademyController extends Controller
         $datas["updater_id"] = $session_id;
         $data = Academy::create($datas);
 
-        return response()->json(['data'=>$data,'message'=>"Berhasil menambah data Kelas ".$request->name]);
+        return response()->json(['data'=>$data,'message'=>"Berhasil menambah data kelas ".$request->name]);
      }
 
      public function destroy($id){
@@ -59,7 +59,7 @@ class AcademyController extends Controller
         foreach($aca_pers as $aca_per){
             $customers = $aca_per->customers;
             if(count($customers)>0)
-                return response()->json(["message"=>"Tidak bisa hapus Periode Akademi yang sudah memiliki peserta"],450);
+                return response()->json(["message"=>"Tidak bisa menghapus periode kelas yang sudah memiliki peserta"],450);
         }
         if($data->delete()){
             return response()->json(["status"=>"ok"]);
@@ -71,17 +71,17 @@ class AcademyController extends Controller
         $datas = $request->all();
 
         $validator = Validator::make($datas, rules_lists(__CLASS__, __FUNCTION__));
-        if ($validator->fails()) return response()->json(['errors'=>($validator->messages())],422);
+        if ($validator->fails()) return response()->json(['message'=>"Kamu belum melengkapi formulir pendaftaran ini :( Silakan mengisi formulir pendaftaran ini dengan lengkap ya :)"],450);
 
         $cus = Customer::updateOrCreate(["email"=>$datas["email"]],$datas);
         if($cus){
             //cek ada akademi X gak
             $acas = Academy::whereIn("id",$datas["ja_ids"])->pluck('id')->toArray();
-            if(count($acas) != count($datas["ja_ids"])) return response()->json(["message"=>"Periksa pemilihan Kelas kembali"],450);
+            if(count($acas) != count($datas["ja_ids"])) return response()->json(["message"=>"Periksa pemilihan kelas kembali"],450);
 
             //cek akademi X lagi buka ato gak di periode ini
             $aca_pers = AcademyPeriod::whereIn("academy_id",$acas)->where('active',1)->get();
-            if(count($aca_pers) != count($datas["ja_ids"])) return response()->json(["message"=>"Periksa pemilihan Kelas kembali"],450);
+            if(count($aca_pers) != count($datas["ja_ids"])) return response()->json(["message"=>"Periksa pemilihan kelas kembali"],450);
 
             //cek customer A udah terdaftar belum di akademi X
             $amount = 0;
@@ -91,7 +91,7 @@ class AcademyController extends Controller
                 if($aca_per_cus){
                     //jika sudah terdaftar dan pembayaran berhasil atau pending, tidak bisa melanjutkan pembayaran
                     if($aca_per_cus->status == 1 || $aca_per_cus->status == 2 )
-                        return response()->json(["message"=>"Kamu sudah pernah mendaftar Akademi ".$aca_per_cus->academy_period->academy->name.". Pendaftaran dibatalkan."],450);
+                        return response()->json(["message"=>"Kamu sudah pernah mendaftar kelas ".$aca_per_cus->academy_period->academy->name.". Pendaftaran dibatalkan."],450);
                 }else{
                     //jika belum terdaftar, tambahkan di peserta dengan status belum bayar
                     $updater_id = null;
@@ -105,17 +105,18 @@ class AcademyController extends Controller
                     }
                 }
                 array_push($aca_per_cus_ids, $aca_per_cus->id);
-                $amount += $aca_per->price;
+                $aca_per_price = $aca_per->price;
+                $amount += $aca_per_price;
             }            
             //cek promo code
             $coupon_check = $this->actual_price($amount, $request->promo_code, $aca_per_cus_ids);
             if(!$coupon_check["status"]){
-                return response()->json(["message"=>"Maaf, kode promomu salah atau sudah nggak berlaku nih."]);
+                return response()->json(["message"=>"Maaf, kode promomu salah atau sudah nggak berlaku nih :("],450);
             }
             $amount = $coupon_check["amount"];
 
             if(Auth::check()){
-                return response()->json(["message"=>"Berhasil tambah peserta","payment"=>false]);
+                return response()->json(["message"=>"Kamu berhasil mendaftarkan peserta","payment"=>false]);
             }
 
             $added_str = "";
@@ -301,7 +302,7 @@ class AcademyController extends Controller
                 "status"=>1, "updater_id"=>$session_id, "payment_id"=>$payment->id
             ]);
             if($res){
-                return response()->json(["message"=>"Status Pembayaran diubah"]);
+                return response()->json(["message"=>"Status pembayaran diubah"]);
             }
         }
         return response()->json(["message"=>"Terjadi Kesalahan"],450);
@@ -310,7 +311,7 @@ class AcademyController extends Controller
      public function customerDestroy($id){
         $data = AcademyPeriodCustomer::findOrFail($id);
         if(in_array($data->status,[1,2])){
-            return response()->json(["message"=>"Tidak bisa hapus peserta yang telah/pending membayar"],450);
+            return response()->json(["message"=>"Tidak bisa menghapus peserta yang telah membayar atau pembayaran sedang tertunda."],450);
         }
         if($data->delete()){
             return response()->json(["status"=>"ok"]);

@@ -14,9 +14,10 @@ class MentorController extends Controller
 {
      public function index(Request $request){
         $data = Mentor::where("id",">",0);
+
         if($request->has('search')){
             if(trim($request->search) != ""){
-                $data = $data->where('name',$request->search);
+                $data = $data->where('name','like','%'.$request->search.'%');
             }
         }   
         $data = $data->with('updater')->paginate(10);

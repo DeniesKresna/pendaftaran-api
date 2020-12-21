@@ -38,7 +38,7 @@ class AcademyPeriodController extends Controller
         //cek academy exist
         $res = AcademyPeriod::where(["academy_id"=>$request->academy_id, "period"=>$request->period])->first();
         if($res)
-            return response()->json(["message"=>"Akademi yang kamu maksud sudah pernah dibuat"],450);
+            return response()->json(["message"=>"Kelas yang kamu maksud sudah pernah dibuat"],450);
 
         // validation
         $datas = $request->all();
@@ -57,7 +57,7 @@ class AcademyPeriodController extends Controller
             $res = AcademyPeriod::where("academy_id",$request->academy_id)->where("id",'!=',$data->id)->update(["active"=>0]);
         }
 
-        return response()->json(['data'=>$data,"message"=>"Berhasil tambah Periode Akademi"]);
+        return response()->json(['data'=>$data,"message"=>"Berhasil menambahkan periode kelas"]);
      }
 
      public function update(Request $request, $id){
@@ -80,13 +80,13 @@ class AcademyPeriodController extends Controller
             $res = AcademyPeriod::where("academy_id",$request->academy_id)->where("id",'!=',$id)->update(["active"=>0]);
         }
 
-        return response()->json(['data'=>$data,"message"=>"Berhasil update Periode Akademi"]);
+        return response()->json(['data'=>$data,"message"=>"Berhasil mengubah periode kelas"]);
      }
      public function destroy($id){
         $data = AcademyPeriod::findOrFail($id);
         $customers = $data->customers;
         if(count($customers)>0)
-            return response()->json(["message"=>"Tidak bisa hapus Periode Akademi yang sudah memiliki peserta"],450);
+            return response()->json(["message"=>"Tidak bisa menghapus periode kelas yang sudah memiliki peserta"],450);
 
         if($data->delete()){
             return response()->json(["status"=>"ok"]);

@@ -1,7 +1,7 @@
 <?php
 namespace App\Traits;
 
-use app\Models\Coupon;
+use App\Models\Coupon;
 
 trait Promo{
     public function actual_price($amount, $code, $ja=[]){
@@ -12,7 +12,7 @@ trait Promo{
 
         $coupon = Coupon::where("code",$code)->first();
         if(!$coupon){
-            return ["amount"=>$amount, "status"=>true];
+            return ["amount"=>$amount, "status"=>false];
         }
         if($coupon->type == "simple"){
             $amount -= $coupon->cut;
