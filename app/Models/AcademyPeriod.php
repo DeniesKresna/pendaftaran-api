@@ -16,7 +16,6 @@ class AcademyPeriod extends Model
 		'period',
 		'price',
 		'active',
-		'mentor_id',
 		'updater_id'
 	];
 
@@ -28,8 +27,8 @@ class AcademyPeriod extends Model
 		return $this->belongsTo("App\Models\Academy");
 	}
 
-	public function mentor(){
-		return $this->belongsTo("App\Models\Mentor");
+	public function mentors(){
+		return $this->belongsToMany("App\Models\Mentor");
 	}
 
 	public function customers(){

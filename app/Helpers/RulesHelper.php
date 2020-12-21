@@ -79,6 +79,35 @@ if (! function_exists('rules_lists')) {
             }
 
         }
+
+        //================================Mentor=======================
+        if($controller == "MentorController"){
+            if($method=="store"){
+                return [
+                    'name' => 'required|max:191',
+                    'company_name' => 'required|max:191',
+                    'position' => 'required|max:191',
+                    'education' => 'required',
+                    'experience' => 'required',
+                    'linkedin_link' => 'required|max:191',
+                    'email' => 'required|max:191|email|unique:mentors',
+                    'phone' => 'required|max:191|unique:mentors',
+                ];
+            }
+            else{
+                return [
+                    'name' => 'required|max:191',
+                    'company_name' => 'required|max:191',
+                    'position' => 'required|max:191',
+                    'education' => 'required',
+                    'experience' => 'required',
+                    'linkedin_link' => 'required|max:191',
+                    'email' => [new \App\Rules\isUnique("mentors","email",["id"=>$custom_var["id"]]), 'email', 'required', 'max:191'],
+                    'phone' => [new \App\Rules\isUnique("mentors","phone",["id"=>$custom_var["id"]]), 'required', 'max:191'],
+                ];
+            }
+
+        }
         
         //========================Global============================================
 

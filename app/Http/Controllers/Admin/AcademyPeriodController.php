@@ -16,21 +16,19 @@ use Illuminate\Support\Facades\DB;
 class AcademyPeriodController extends Controller
 {
      public function index(Request $request){
-        $data = DB::table('academy_periods as ap')
-                    ->join('academies as a','a.id','=','ap.academy_id')
-                    ->join('users as u','u.id','=','ap.updater_id');
+        $data = AcademyPeriod::where('id','>',0);
 
         if($request->has('ja_id')){
             if(trim($request->ja_id) != ""){
-                $data = $data->where('ap.academy_id',$request->ja_id);
+                $data = $data->where('academy_id',$request->ja_id);
             }
         }
         if($request->has('period')){
             if(trim($request->period) != ""){
-                $data = $data->where('ap.period',$request->period);
+                $data = $data->where('period',$request->period);
             }
         }   
-        $data = $data->select("ap.*","a.name as academy_name","u.name as updater_name")->paginate(10);
+        $data = $data->with(['academy','updater','mentors'])->paginate(10);
         return response()->json(["data"=>$data->appends($request->all())]);
      }
 
@@ -49,6 +47,11 @@ class AcademyPeriodController extends Controller
 
         $datas["updater_id"] = $session_id;
         $data = AcademyPeriod::create($datas);
+        if($data){
+            $data->mentors()->attach($datas["mentor_ids"]);
+        }else{
+            return response()->json(["message"=>"Terjadi Kesalahan"],450);
+        }
 
         if($request->active == 1){
             $res = AcademyPeriod::where("academy_id",$request->academy_id)->where("id",'!=',$data->id)->update(["active"=>0]);
@@ -72,7 +75,7 @@ class AcademyPeriodController extends Controller
         if(!$data->update(exclude_array($datas,["active","description","price","mentor_id","updater_id"]))){
             return response()->json(["message"=>"Terjadi Kesalahan"],450);
         }
-
+        $data->mentors()->sync($datas["mentor_ids"]);
         if($request->active == 1){
             $res = AcademyPeriod::where("academy_id",$request->academy_id)->where("id",'!=',$id)->update(["active"=>0]);
         }

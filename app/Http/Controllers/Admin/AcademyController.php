@@ -15,9 +15,11 @@ use Illuminate\Support\Facades\DB;
 use Ixudra\Curl\Facades\Curl;
 use Illuminate\Support\Facades\Mail;
 use App\Mails\AcademyMail;
+use App\Traits\Promo;
 
 class AcademyController extends Controller
 {
+    use Promo;
      public function index(Request $request){
         $data = Academy::where('id','>',0);
         if($request->has('search')){
@@ -105,6 +107,12 @@ class AcademyController extends Controller
                 array_push($aca_per_cus_ids, $aca_per_cus->id);
                 $amount += $aca_per->price;
             }            
+            //cek promo code
+            $coupon_check = $this->actual_price($amount, $request->promo_code, $aca_per_cus_ids);
+            if(!$coupon_check["status"]){
+                return response()->json(["message"=>"Maaf, kode promomu salah atau sudah nggak berlaku nih."]);
+            }
+            $amount = $coupon_check["amount"];
 
             if(Auth::check()){
                 return response()->json(["message"=>"Berhasil tambah peserta","payment"=>false]);

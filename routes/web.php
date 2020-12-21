@@ -49,6 +49,13 @@ $router->group(['prefix'=>'api', 'middleware'=>'auth'], function () use ($router
 	$router->put('academy-periods/{id}', 'Admin\AcademyPeriodController@update');
 	$router->delete('academy-periods/{id}', 'Admin\AcademyPeriodController@destroy');
 
+	//===================mentor================================
+	$router->get('mentors/list', 'Admin\MentorController@list');
+	$router->get('mentors', 'Admin\MentorController@index');
+	$router->post('mentors', 'Admin\MentorController@store');
+	$router->put('mentors/{id}', 'Admin\MentorController@update');
+	$router->delete('mentors/{id}', 'Admin\MentorController@destroy');
+
 	//=================== Payment ================================
 	$router->get('payments/{id}', 'Admin\PaymentController@show');
 });
