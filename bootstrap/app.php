@@ -61,7 +61,7 @@ $app->singleton(
 //     App\Http\Middleware\ExampleMiddleware::class
 // ]);
 $app->middleware([
-    App\Http\Middleware\CorsMiddleware::class
+    'Nord\Lumen\Cors\CorsMiddleware',
  ]);
 
 $app->routeMiddleware([
@@ -84,6 +84,7 @@ $app->register(App\Providers\AuthServiceProvider::class);
 $app->register(Illuminate\Mail\MailServiceProvider::class);
 $app->register(Tymon\JWTAuth\Providers\LumenServiceProvider::class);
 $app->register(Ixudra\Curl\CurlServiceProvider::class);
+$app->register(Nord\Lumen\Cors\CorsServiceProvider);
 //$app->register(App\Providers\EventServiceProvider::class);
 
 

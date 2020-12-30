@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "87b0802ee5309afee2151712ad0a1c66",
+    "content-hash": "5c86aecfd5e3184e171aa1009dfd0003",
     "packages": [
         {
             "name": "doctrine/inflector",
@@ -2160,6 +2160,68 @@
                 "source": "https://github.com/nikic/FastRoute/tree/master"
             },
             "time": "2018-02-13T20:26:39+00:00"
+        },
+        {
+            "name": "nordsoftware/lumen-cors",
+            "version": "3.3.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/digiaonline/lumen-cors.git",
+                "reference": "92c0000190ed38af64300468c751d81d7a10ec9b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/digiaonline/lumen-cors/zipball/92c0000190ed38af64300468c751d81d7a10ec9b",
+                "reference": "92c0000190ed38af64300468c751d81d7a10ec9b",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/support": "^5.4 || ^6.0 || ^7.0",
+                "php": ">=7.1"
+            },
+            "require-dev": {
+                "codeception/assert-throws": "^1.0",
+                "codeception/codeception": "^2.5",
+                "codeception/specify": "^1.2",
+                "codeception/verify": "^1.2",
+                "laravel/lumen-framework": "^5.4 || ^6.0 || ^7.0",
+                "php-coveralls/php-coveralls": "^2.2",
+                "phpstan/phpstan": "^0.12.2"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Nord\\Lumen\\Cors\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Christoffer Niska",
+                    "email": "christofferniska@gmail.com"
+                }
+            ],
+            "description": "CORS module for the Lumen PHP framework.",
+            "keywords": [
+                "cors",
+                "cross-origin",
+                "headers",
+                "http",
+                "laravel",
+                "lumen",
+                "preflight",
+                "request",
+                "resource",
+                "sharing"
+            ],
+            "support": {
+                "issues": "https://github.com/digiaonline/lumen-cors/issues",
+                "source": "https://github.com/digiaonline/lumen-cors/tree/3.3.0"
+            },
+            "time": "2020-03-30T07:35:48+00:00"
         },
         {
             "name": "opis/closure",
