@@ -16,7 +16,7 @@ $router->get('/', function () use ($router) {
 });
 
 $router->group(['prefix' => 'api'], function () use ($router) {
-    $router->post('register', 'Admin\AuthController@register');
+    $router->post('register-'.env("REGISTER_SECRET_URL"), 'Admin\AuthController@register');
     $router->post('auth/login', 'Admin\AuthController@login');
 	$router->get('auth/me', 'Admin\AuthController@me');
 
