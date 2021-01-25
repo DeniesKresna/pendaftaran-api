@@ -9,23 +9,22 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Academy extends Model
+class Expert extends Model
 {
 	protected $fillable = [
-		'name',
+		'mentor_id',
+		'job',
+		'price',
 		'description',
-		'updater_id'
+		'updater_id',
+		'active'
 	];
 
 	public function updater(){
 		return $this->belongsTo("App\User","updater_id");
 	}
-
-	public function academy_periods(){
-		return $this->hasMany("App\Models\AcademyPeriod");
-	}
-
-	public function media(){
-		return $this->belongsTo("App\Models\Media");
+	
+	public function mentor(){
+		return $this->belongsTo("App\Models\Mentor");
 	}
 }

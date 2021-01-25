@@ -53,6 +53,15 @@ if (! function_exists('rules_lists')) {
             else if($method=="store"){
                 return [
                     'name' => 'required|max:191|unique:academies',
+                    'description' => 'max:191',
+                    'file' => 'file|max:400|mimes:jpg,jpeg,gif,bmp,png'
+                ];
+            }
+            else if($method=="update"){
+                return [
+                    'name' => [new \App\Rules\isUnique("academies","name",["id"=>$custom_var["id"]]), 'required', 'max:191'],
+                    'description' => 'max:191',
+                    'file' => 'file|max:400|mimes:jpg,jpeg,gif,bmp,png'
                 ];
             }
         }
@@ -92,6 +101,7 @@ if (! function_exists('rules_lists')) {
                     'linkedin_link' => 'required|max:191',
                     'email' => 'required|max:191|email|unique:mentors',
                     'phone' => 'required|max:191|unique:mentors',
+                    'file' => 'file|max:400|mimes:jpg,jpeg,gif,bmp,png'
                 ];
             }
             else{
@@ -104,6 +114,30 @@ if (! function_exists('rules_lists')) {
                     'linkedin_link' => 'required|max:191',
                     'email' => [new \App\Rules\isUnique("mentors","email",["id"=>$custom_var["id"]]), 'email', 'required', 'max:191'],
                     'phone' => [new \App\Rules\isUnique("mentors","phone",["id"=>$custom_var["id"]]), 'required', 'max:191'],
+                    'file' => 'file|max:400|mimes:jpg,jpeg,gif,bmp,png'
+                ];
+            }
+
+        }
+
+        //================================Expert=======================
+        if($controller == "ExpertController"){
+            if($method=="store"){
+                return [
+                    'mentor_id' => [new \App\Rules\isExists("mentors","id"),'required'],
+                    'job' => 'required|max:191',
+                    'price' => 'required|numeric',
+                    'description' => 'max:300',
+                    'active' => 'in:1,0',
+                ];
+            }
+            else{
+                return [
+                    'mentor_id' => [new \App\Rules\isExists("mentors","id"),'required'],
+                    'job' => 'required|max:191',
+                    'price' => 'required|numeric',
+                    'description' => 'max:300',
+                    'active' => 'in:1,0',
                 ];
             }
 

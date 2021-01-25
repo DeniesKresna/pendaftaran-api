@@ -11,6 +11,7 @@ use App\Models\Customer;
 use App\Models\AcademyPeriod;
 use App\Models\AcademyPeriodCustomer;
 use App\Models\Payment;
+use App\Models\Media;
 use Illuminate\Support\Facades\DB;
 use Ixudra\Curl\Facades\Curl;
 use Illuminate\Support\Facades\Mail;
@@ -25,7 +26,7 @@ class AcademyController extends Controller
         if($request->has('search')){
             $data->where('name','like','%'.$request->search.'%');
         }
-        $data = $data->with('updater')->orderBy('id','desc')->paginate(10);
+        $data = $data->with('updater','media')->orderBy('id','desc')->paginate(10);
         return response()->json(['data'=>$data]);
      }
 
@@ -50,7 +51,41 @@ class AcademyController extends Controller
         $datas["updater_id"] = $session_id;
         $data = Academy::create($datas);
 
+        if($data && $request->has('file')){
+            $upload = upload("/academies/",$datas["file"],$session_id,$session_id);
+            $res = Media::create($upload);
+            $data->media_id = $res->id;
+            $data->save();
+        }
+
         return response()->json(['data'=>$data,'message'=>"Berhasil menambah data kelas ".$request->name]);
+     }
+
+     public function update(Request $request, $id){
+        $session_id = Auth::user()->id;
+        $datas = $request->all();
+
+        $validator = Validator::make($datas, rules_lists(__CLASS__, __FUNCTION__,["id"=>$id]));
+        if ($validator->fails()) return response()->json(['errors'=>($validator->messages())],422);
+
+        $datas["updater_id"] = $session_id;
+        $data = Academy::findOrFail($id);
+        $data->update($datas);
+
+        if($data && $request->has('file')){
+            $media = $data->media;
+            if(!is_null($media)){
+                delete_file(base_path('public/').$media->path);
+                $media->delete();
+            }
+
+            $upload = upload("/academies/",$datas["file"],$session_id,$session_id);
+            $res = Media::create($upload);
+            $data->media_id = $res->id;
+            $data->save();
+        }
+
+        return response()->json(['data'=>$data,'message'=>"Berhasil mengubah data kelas ".$request->name]);
      }
 
      public function destroy($id){
@@ -61,6 +96,13 @@ class AcademyController extends Controller
             if(count($customers)>0)
                 return response()->json(["message"=>"Tidak bisa menghapus periode kelas yang sudah memiliki peserta"],450);
         }
+
+        if(!is_null($data->media)){
+            $media = $data->media;
+            delete_file(base_path('public/').$media->path);
+            $media->delete();
+        }
+
         if($data->delete()){
             return response()->json(["status"=>"ok"]);
         }
@@ -317,5 +359,11 @@ class AcademyController extends Controller
             return response()->json(["status"=>"ok"]);
         }
         return response()->json(["message"=>"Terjadi Kesalahan"],450);
+     }
+
+     public function page_data(Request $request){
+        $data = DB::table('academy_periods as ap')->join('academies as a','a.id','=','ap.academy_id')->leftJoin('medias as m','m.id','=','a.media_id')->where('ap.active',1)->select('ap.*','a.name','a.description','m.url');
+        if($request->has('limit')) $data->limit($request->limit);
+        return response()->json(["data"=>$data->get()]);
      }
 }

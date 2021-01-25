@@ -20,6 +20,7 @@ class Mentor extends Model
 		'linkedin_link',
 		'email',
 		'phone',
+		'media_id',
 		'updater_id'
 	];
 
@@ -29,5 +30,13 @@ class Mentor extends Model
 
 	public function academy_periods(){
 		return $this->belongsToMany("App\Models\AcademyPeriod");
+	}
+
+	public function expert(){
+		return $this->hasOne("App\Models\Expert");
+	}
+	
+	public function media(){
+		return $this->belongsTo("App\Models\Media");
 	}
 }

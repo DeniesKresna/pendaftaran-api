@@ -9,11 +9,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Academy extends Model
+class Role extends Model
 {
 	protected $fillable = [
 		'name',
-		'description',
 		'updater_id'
 	];
 
@@ -21,11 +20,7 @@ class Academy extends Model
 		return $this->belongsTo("App\User","updater_id");
 	}
 
-	public function academy_periods(){
-		return $this->hasMany("App\Models\AcademyPeriod");
-	}
-
-	public function media(){
-		return $this->belongsTo("App\Models\Media");
+	public function users(){
+		return $this->hasMany("App\User");
 	}
 }

@@ -38,11 +38,12 @@ function base_upload_dir(){
  * @param string $title
  * @return string
  */
-function upload($path, $photo, $title=""){
-    $destinationPath = base_upload_dir().$path;
+function upload($path, $photo, $updater_id, $title=""){
+    $destinationPath = './gallery/'.$path;
     $photoName = time().(!empty($title)?"_".$title:"").'.'.$photo->getClientOriginalExtension();
     $photo->move($destinationPath, $photoName);
-    return $path.$photoName;
+    $upload = $path.$photoName;
+    return ["path" => '/gallery'.$upload, "url" => url('/gallery/').$upload, "name"=>$photoName, "type"=>file_type(file_extension($upload)), "updater_id"=>$updater_id];
 }
 
 function file_extension($url){
@@ -57,6 +58,10 @@ function file_type($ext){
     if (in_array($ext,$videos)) return "video";
     else return false;
 
+}
+
+function delete_file($path){
+    unlink($path);
 }
 
 /**
